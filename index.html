@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#070b14">
+  <meta name="description" content="Mobile Sternkarte mit GPS, Kompass, Sternbildkatalog, Sonne, Mond und Planeten.">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./style.css">
+  <title>CONSTELLATION Mobile — Sternkarte für unterwegs</title>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="appbar">
+      <div>
+        <span class="kicker">LIVING SKY GUIDE</span>
+        <h1>Constellation <em>Mobile</em></h1>
+      </div>
+      <div class="app-actions">
+        <button id="install-btn" class="icon-btn hidden" type="button" title="App installieren">＋</button>
+        <button id="fullscreen-btn" class="icon-btn" type="button" title="Vollbild">⛶</button>
+      </div>
+    </header>
+
+    <main>
+      <!-- SKY -->
+      <section class="view active" id="view-sky" data-view="sky">
+        <div class="now-card">
+          <div class="now-main">
+            <span class="status-dot"></span>
+            <div><b id="sky-state">Himmel wird berechnet …</b><small id="now-clock">—</small></div>
+          </div>
+          <button id="gps-btn" class="primary-small" type="button">⌖ GPS</button>
+        </div>
+        <div class="location-line"><span id="location-label">Manueller Standort</span><span id="sidereal-label">Sternzeit —</span></div>
+
+        <div class="instrument-wrap">
+          <div class="instrument" id="instrument" aria-label="Interaktive Himmelskarte">
+            <div class="ring-outer"><canvas id="ringmarks"></canvas></div>
+            <div class="sky-mask">
+              <canvas id="sky"></canvas>
+              <div class="glass"></div>
+              <div class="tooltip" id="tooltip" role="status"></div>
+            </div>
+            <svg class="overlay" viewBox="0 0 600 600" aria-hidden="true">
+              <circle cx="300" cy="300" r="262" class="ov-circle"/>
+              <circle cx="300" cy="300" r="174" class="ov-circle faint"/>
+              <circle cx="300" cy="300" r="87" class="ov-circle faint"/>
+              <line x1="300" y1="38" x2="300" y2="562" class="ov-cross"/>
+              <line x1="38" y1="300" x2="562" y2="300" class="ov-cross"/>
+            </svg>
+            <span class="card n">N</span><span class="card e">O</span><span class="card s">S</span><span class="card w">W</span>
+          </div>
+        </div>
+
+        <div class="map-readout">
+          <div><span>ÜBER HORIZONT</span><b id="ro-count">0</b></div>
+          <div><span>OBJEKT</span><b id="ro-name">—</b></div>
+          <div><span>HÖHE / AZ</span><b id="ro-pos">—</b></div>
+        </div>
+
+        <div class="quick-controls">
+          <button class="chip active" id="c-lines" type="button">✦ Figuren</button>
+          <button class="chip" id="c-labels" type="button">Aa Namen</button>
+          <button class="chip active" id="c-bodies" type="button">☉ Planeten</button>
+          <button class="chip active" id="c-ecliptic" type="button">⌁ Ekliptik</button>
+          <button class="chip" id="c-grid" type="button">⊕ Raster</button>
+        </div>
+
+        <article class="object-card" id="object-card">
+          <div class="object-head">
+            <div class="object-symbol" id="object-symbol">✦</div>
+            <div class="object-title"><span id="object-type">HIMMELSATLAS</span><h2 id="object-name">Tippe ein Objekt an</h2></div>
+            <button id="favorite-btn" class="fav-btn" type="button" aria-label="Favorit">☆</button>
+          </div>
+          <p id="object-description">Tippe auf ein Sternbild, einen Stern, Sonne, Mond oder einen Planeten.</p>
+          <div class="object-facts">
+            <div><span>Höhe</span><b id="fact-alt">—</b></div>
+            <div><span>Azimut</span><b id="fact-az">—</b></div>
+            <div><span>Richtung</span><b id="fact-dir">—</b></div>
+            <div><span id="fact-extra-label">Info</span><b id="fact-extra">—</b></div>
+          </div>
+          <details class="story-box" id="story-box">
+            <summary>Bedeutung & Geschichte</summary>
+            <p id="story-text">—</p>
+            <p class="tip" id="story-tip"></p>
+          </details>
+        </article>
+
+        <article class="trajectory-card">
+          <div class="section-head"><div><span class="kicker">LAUFBAHN</span><h2>Die nächsten Stunden</h2></div><span id="trajectory-target">—</span></div>
+          <div class="trajectory-chart" id="trajectory-chart"><div class="empty">Objekt auswählen</div></div>
+          <div class="trajectory-facts">
+            <div><span>Nächster Aufgang</span><b id="rise-time">—</b></div>
+            <div><span>Nächster Untergang</span><b id="set-time">—</b></div>
+            <div><span>Höchster Punkt</span><b id="max-alt">—</b></div>
+          </div>
+        </article>
+      </section>
+
+      <!-- VISIBLE NOW -->
+      <section class="view" id="view-visible" data-view="visible">
+        <div class="page-head"><span class="kicker">JETZT AM HIMMEL</span><h2>Sichtbar an deinem Standort</h2><p id="visibility-note">Geometrisch über dem Horizont; Tageslicht kann Sterne überstrahlen.</p></div>
+        <div class="section-head compact"><h3>Sonne, Mond & Planeten</h3><span id="body-visible-count">0</span></div>
+        <div class="object-list" id="body-list"></div>
+        <div class="section-head compact"><h3>Sternbilder</h3><span id="const-visible-count">0</span></div>
+        <div class="object-list" id="visible-constellations"></div>
+      </section>
+
+      <!-- COMPASS -->
+      <section class="view" id="view-compass" data-view="compass">
+        <div class="page-head"><span class="kicker">PEILMODUS</span><h2>Was liegt vor mir?</h2><p>GPS bestimmt deinen Standort. Der Gerätekompass bestimmt deine Blickrichtung. Halte das Smartphone möglichst aufrecht.</p></div>
+        <button id="compass-btn" class="primary full" type="button">Kompass aktivieren</button>
+        <div class="compass-stage" id="compass-stage">
+          <div class="compass-ring">
+            <span class="cn">N</span><span class="ce">O</span><span class="cs">S</span><span class="cw">W</span>
+            <div class="compass-needle" id="compass-needle"><i></i></div>
+            <div class="compass-center"><b id="heading-value">—°</b><span id="heading-dir">—</span></div>
+          </div>
+          <div class="compass-quality" id="compass-quality">Kompass noch nicht aktiv</div>
+        </div>
+        <div class="ahead-card">
+          <span class="kicker">IM SICHTKEGEL ±25°</span>
+          <h3>Vor deiner Blickrichtung</h3>
+          <div class="object-list" id="ahead-list"><div class="empty">Kompass aktivieren</div></div>
+        </div>
+      </section>
+
+      <!-- CATALOG -->
+      <section class="view" id="view-catalog" data-view="catalog">
+        <div class="page-head"><span class="kicker">IAU-KATALOG</span><h2>88 Sternbilder</h2><p>Alle offiziell anerkannten Sternbilder. 32 davon sind in dieser Version zusätzlich als helle Sternfiguren auf der Karte eingezeichnet.</p></div>
+        <label class="search-box"><span>⌕</span><input id="catalog-search" type="search" placeholder="Sternbild, deutscher Name, Kürzel …"></label>
+        <div class="filter-row" id="catalog-filters">
+          <button class="filter active" data-filter="all">Alle 88</button>
+          <button class="filter" data-filter="zodiac">12 Tierkreiszeichen</button>
+          <button class="filter" data-filter="ecliptic">Ekliptik</button>
+          <button class="filter" data-filter="plotted">Auf Karte</button>
+          <button class="filter" data-filter="favorites">Favoriten</button>
+        </div>
+        <div class="catalog-list" id="catalog-list"></div>
+        <article class="catalog-detail hidden" id="catalog-detail">
+          <div class="object-head"><div class="object-symbol" id="cat-symbol">✦</div><div class="object-title"><span id="cat-iau">IAU</span><h2 id="cat-name">—</h2></div></div>
+          <p id="cat-note">—</p>
+          <div class="catalog-actions"><button id="cat-show" class="primary-small" type="button">Auf Karte zeigen</button><button id="cat-fav" class="secondary-small" type="button">☆ Merken</button></div>
+        </article>
+      </section>
+
+      <!-- SETTINGS -->
+      <section class="view" id="view-settings" data-view="settings">
+        <div class="page-head"><span class="kicker">BEOBACHTER</span><h2>Standort & Zeit</h2><p>Für die aktuelle Himmelsposition braucht die App nur Zeit, Breiten- und Längengrad. Alles wird lokal berechnet.</p></div>
+        <div class="settings-card">
+          <button id="settings-gps" class="primary full" type="button">⌖ Aktuellen GPS-Standort verwenden</button>
+          <div class="field-row">
+            <label><span>Breitengrad</span><input id="obs-lat" type="number" min="-89.9" max="89.9" step="0.0001" value="51"></label>
+            <label><span>Längengrad</span><input id="obs-lon" type="number" min="-180" max="180" step="0.0001" value="10"></label>
+          </div>
+          <label><span>Datum & Uhrzeit</span><input id="obs-datetime" type="datetime-local"></label>
+          <label class="switch-line"><input id="live-time" type="checkbox" checked><span class="switch"></span><span>Aktuelle Uhrzeit live verwenden</span></label>
+          <button id="set-now" class="secondary full" type="button">Auf jetzt zurücksetzen</button>
+        </div>
+        <div class="settings-card">
+          <h3>Unterwegs</h3>
+          <p><b>GPS:</b> wird nur nach deiner Freigabe abgefragt. Die Koordinaten werden lokal gespeichert und nicht übertragen.</p>
+          <p><b>Kompass:</b> benötigt auf manchen Geräten eine zusätzliche Sensorfreigabe. Magnetische Hüllen und Metall in der Nähe können die Richtung verfälschen.</p>
+          <p><b>Offline:</b> als PWA installiert funktioniert der Katalog ohne Netz. GPS und Sensorsignale kommen direkt vom Gerät.</p>
+        </div>
+        <div class="settings-card warning-card"><h3>Genauigkeit</h3><p>Die Sternpositionen basieren auf festen RA/Dec-Koordinaten; Sonne, Mond und Planeten auf kompakten Ephemeriden. Die App ist als Beobachtungsführer gedacht, nicht für Navigation oder wissenschaftliche Messungen.</p></div>
+      </section>
+    </main>
+
+    <nav class="bottom-nav" aria-label="Hauptnavigation">
+      <button class="nav-btn active" data-target="sky"><span>✦</span><b>Himmel</b></button>
+      <button class="nav-btn" data-target="visible"><span>◉</span><b>Sichtbar</b></button>
+      <button class="nav-btn" data-target="compass"><span>⌖</span><b>Peilen</b></button>
+      <button class="nav-btn" data-target="catalog"><span>☷</span><b>Katalog</b></button>
+      <button class="nav-btn" data-target="settings"><span>⚙</span><b>Ort/Zeit</b></button>
+    </nav>
+  </div>
+
+  <script src="./constellations.js"></script>
+  <script src="./catalog88.js"></script>
+  <script src="./stories.js"></script>
+  <script src="./ephemeris.js"></script>
+  <script src="./script.js"></script>
+</body>
+</html>

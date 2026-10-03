@@ -2,6 +2,8 @@
 
 > Mobile Sternenkarte und Himmelsdatenbank mit GPS, Live-Himmelspositionen, Sternbildern, Tierkreis, Sonne, Mond und Planeten – entwickelt mit HTML, CSS und Vanilla JavaScript.
 
+> Inspiriert durch: https://codepen.io/editor/Chathura-Jayasanka/pen/01a0f2cb-55c7-7b70-9b01-87bbd1f8b1a8
+
 **Constellation Mobile Sky Guide** ist eine mobile Astronomie-Anwendung zur Erkundung des aktuellen Himmels anhand von Standort, Datum, Uhrzeit und – sofern vom Gerät unterstützt – der Blickrichtung des Smartphones.
 
 Das Projekt verbindet eine interaktive Sternkarte mit astronomischen Berechnungen, GPS, Gerätesensoren und einem durchsuchbaren Sternbildkatalog. Die Anwendung ist bewusst leichtgewichtig aufgebaut und benötigt weder ein JavaScript-Framework noch eine externe Astronomie-API.
